@@ -98,8 +98,7 @@ ram_stealmem(unsigned long npages)
 	paddr_t paddr;
 
 	size = npages * PAGE_SIZE;
-	
-	/* check if there is enough memory */
+
 	if (firstpaddr + size > lastpaddr) {
 		return 0;
 	}

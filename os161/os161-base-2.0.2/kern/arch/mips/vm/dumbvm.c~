@@ -153,8 +153,8 @@ static paddr_t getfreeppages(unsigned long npages){
 		}
 	}
 	if(found) {
-		occupy_mem[first_addr] = npages;
-		for(int i=firstAddr; i<firstAdd+npages; i++) memory_map[i]=1;
+		occupy_mem[first_addr] = freeFrame;
+		for(int i=firstAddr; i<firstAdd+freeFrame; i++) memory_map[i]=1;
 		result = (paddr_t)(firs_addr*SIZE_PAGE);
 	}
 	else result = 0
