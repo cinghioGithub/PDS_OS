@@ -446,3 +446,4 @@ optfile   hello    main/hello.c
 
 defoption syscalls
 optfile	  syscalls syscall/file_syscall.c
+optfile   syscalls syscall/proc_syscalls.c
