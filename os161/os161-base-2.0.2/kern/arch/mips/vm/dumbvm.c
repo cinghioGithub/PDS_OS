@@ -63,6 +63,7 @@
  * Wrap ram_stealmem in a spinlock.
  */
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
+static struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
 static int size;
 static unsigned char* memory_map;
 static unsigned long* occupy_mem;
@@ -72,10 +73,10 @@ static int activeMemoryMap = 0;
 /* check if the memory_ma and accupy_mem are active */
 static int isMemoryMapActive(){
 	int active;
-	spinlock_acquire(&stealmem_lock);
+	spinlock_acquire(&freemem_lock);
 	active = activeMemoryMap;
-	spinlock_acquire(&stealmem_lock);
-	return active
+	spinlock_release(&freemem_lock);
+	return active;
 }
 
 void
@@ -101,7 +102,7 @@ vm_bootstrap(void)
 
 	spinlock_acquire(&stealmem_lock);
 	activeMemoryMap = 1;
-	spinlock_acquire(&stealmem_lock);
+	spinlock_release(&stealmem_lock);
 }
 
 /*
@@ -136,15 +137,16 @@ static paddr_t getfreeppages(unsigned long npages){
 		if(memory_map[i]==0){
 			if(occupy_mem[i]!=0){
 				if(first_addr==0) first_addr = i;
-				i = i + occupy_mem[i];
-				freeFreme += occupy_mem[i];
+				i = (i + occupy_mem[i])-1;
+				freeFrame += occupy_mem[i];
 				if(freeFrame >= npages) {
 					found = 1;
 					break;
 				}
 			}
 			else{
-				break;
+				freeFrame=0;
+				first_addr=0;
 			}
 		}
 		else{
@@ -154,10 +156,10 @@ static paddr_t getfreeppages(unsigned long npages){
 	}
 	if(found) {
 		occupy_mem[first_addr] = npages;
-		for(int i=firstAddr; i<firstAdd+npages; i++) memory_map[i]=1;
-		result = (paddr_t)(firs_addr*SIZE_PAGE);
+		for(unsigned int i=first_addr; i<first_addr+npages; i++) memory_map[i]=1;
+		result = (paddr_t)(first_addr*PAGE_SIZE);
 	}
-	else result = 0
+	else result = 0;
 	spinlock_release(&stealmem_lock);
 	
 	return result;
@@ -170,11 +172,17 @@ getppages(unsigned long npages)
 	paddr_t addr;
 
 	addr = getfreeppages(npages);
-	if(addr!=0) return addr
+	if(addr!=0) return addr;
 	
 	spinlock_acquire(&stealmem_lock);
 
 	addr = ram_stealmem(npages);
+	if(addr!=0 && isMemoryMapActive()){
+		occupy_mem[addr/PAGE_SIZE]=npages;
+		for(unsigned int i=(addr/PAGE_SIZE); i<(addr/PAGE_SIZE)+npages; i++){
+			memory_map[i]=(unsigned char)1;
+		}
+	}
 
 	spinlock_release(&stealmem_lock);
 	return addr;
@@ -197,9 +205,16 @@ alloc_kpages(unsigned npages)
 void
 free_kpages(vaddr_t addr)
 {
-	/* nothing - leak the memory. */
+	/* set free memory on memory_map bitmap */
+	if(!isMemoryMapActive()) return;
+	paddr_t paddr = addr - MIPS_KSEG0;
+	int frame = (paddr/PAGE_SIZE);
 
-	(void)addr;
+	spinlock_acquire(&stealmem_lock);
+	for(unsigned int i=frame; i<frame+occupy_mem[frame]; i++){
+		memory_map[i]=(unsigned char)0;
+	}
+	spinlock_release(&stealmem_lock);
 }
 
 void
