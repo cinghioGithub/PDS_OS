@@ -155,6 +155,20 @@ lock_create(const char *name)
         }
 
         // add stuff here as needed
+#if OPT_LOCK1
+	lock->owner = NULL;
+	lock->sem = sem_create(name, 1); //semaphore to controll lock_acquire
+#endif
+#if OPT_LOCK2
+	lock->owner = NULL;
+	lock->lock_wchan = wchan_create(lock->lk_name);
+	lock->lock_count = 1;
+	if(lock->lock_wchan == NULL){
+		kfree(lock->lk_name);
+		kfree(lock);
+		return NULL;
+	}
+#endif
 
         return lock;
 }
@@ -165,6 +179,12 @@ lock_destroy(struct lock *lock)
         KASSERT(lock != NULL);
 
         // add stuff here as needed
+#if OPT_LOCK1
+	sem_destroy(lock->sem);
+#endif
+#if OPT_LOCK2
+	wchan_destroy(lock->lock_wchan);
+#endif
 
         kfree(lock->lk_name);
         kfree(lock);
@@ -174,6 +194,21 @@ void
 lock_acquire(struct lock *lock)
 {
         // Write this
+#if OPT_LOCK1
+	P(lock->sem);
+	if(lock->owner == NULL){
+		lock->owner = curthread;
+	}
+#endif
+#if OPT_LOCK2
+	spinlock_acquire(&(lock->lock_spinlock));
+	while(lock->lock_count == 0){
+		wchan_sleep(lock->lock_wchan, &(lock->lock_spinlock));
+	}
+	lock->owner = curthread;
+	lock->lock_count = 0;
+	spinlock_release(&(lock->lock_spinlock));
+#endif
 
         (void)lock;  // suppress warning until code gets written
 }
@@ -182,6 +217,22 @@ void
 lock_release(struct lock *lock)
 {
         // Write this
+#if OPT_LOCK1
+	if(lock->owner != NULL && lock_do_i_hold(lock)){
+		lock->owner = NULL;
+		V(lock->sem);
+	}
+#endif
+#if OPT_LOCK2
+	spinlock_acquire(&(lock->lock_spinlock));
+	if(lock_do_i_hold(lock)){
+		lock->owner = NULL;
+		lock->lock_count = 1;
+		wchan_wakeone(lock->lock_wchan, &(lock->lock_spinlock));	
+	}
+	spinlock_release(&(lock->lock_spinlock));
+#endif
+
 
         (void)lock;  // suppress warning until code gets written
 }
@@ -190,10 +241,25 @@ bool
 lock_do_i_hold(struct lock *lock)
 {
         // Write this
-
+#if OPT_LOCK1
+	if(lock->owner == curthread){
+		return true;
+	}
+	return false;
+#else
+	return true;
+#endif
+#if OPT_LOCK2
+	if(lock->owner == curthread){
+		return true;
+	}
+	return false;
+#else
+	return true;
+#endif
         (void)lock;  // suppress warning until code gets written
 
-        return true; // dummy until code gets written
+        
 }
 
 ////////////////////////////////////////////////////////////
