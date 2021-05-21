@@ -35,7 +35,11 @@ void sys__exit(int status){
 
 #if OPT_EXIT
 int sys_waitpid(pid_t pid){
-	(void) pid;
-	return 0;
+	struct proc *proc;
+	int status;
+	
+	proc = proc_of_pid(pid);
+	status = proc_wait(proc);
+	return status;
 }
 #endif

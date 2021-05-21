@@ -140,7 +140,8 @@ common_prog(int nargs, char **args)
 	 * once you write the code for handling that.
 	 */
 	#if OPT_EXIT
-	exit_status = proc_wait(proc);
+	//exit_status = proc_wait(proc);
+	exit_status = sys_waitpid(proc->pid);
 	return exit_status;
 	#else
 	return 0;
