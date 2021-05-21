@@ -127,6 +127,12 @@ syscall(struct trapframe *tf)
 		sys__exit((int)tf->tf_a0);
 		break;
 #endif
+		
+#if OPT_EXIT
+	    case SYS_waitpid:
+		sys_waitpid((pid_t)tf->tf_a0);
+		break;
+#endif
 
 	    default:
 		kprintf("Unknown syscall %d\n", callno);

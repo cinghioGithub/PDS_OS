@@ -37,6 +37,12 @@
  */
 
 #include <spinlock.h>
+#include "opt-exit.h"
+
+#if OPT_EXIT
+#include <synch.h>
+#include <types.h>
+#endif
 
 struct addrspace;
 struct thread;
@@ -71,6 +77,11 @@ struct proc {
 	struct vnode *p_cwd;		/* current working directory */
 
 	/* add more material here as needed */
+	#if OPT_EXIT
+	struct semaphore *proc_sem;
+	int status;
+	pid_t pid;
+	#endif
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */
@@ -97,5 +108,12 @@ struct addrspace *proc_getas(void);
 /* Change the address space of the current process, and return the old one. */
 struct addrspace *proc_setas(struct addrspace *);
 
+/* Our implementation of wait proc (without pid) */
+#if OPT_EXIT
+/* wait a given process */
+int proc_wait(struct proc *p);
+/* get a struct proc * from a pid */
+struct proc *proc_of_pid(pid_t pid);
+#endif
 
 #endif /* _PROC_H_ */

@@ -48,7 +48,14 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include "opt-exit.h"
 
+#if OPT_EXIT
+#include <limits.h>
+
+struct proc *vect_pid[PID_MAX];  /* vector to map a pid (index) to a process */
+unsigned int first_pid = 1;
+#endif
 /*
  * The process for the kernel; this holds all the kernel-only threads.
  */
@@ -62,6 +69,14 @@ struct proc *
 proc_create(const char *name)
 {
 	struct proc *proc;
+
+	#if OPT_EXIT
+	if(first_pid){
+		for(pid_t i=0; i<PID_MAX; i++){
+			vect_pid[i] = NULL;
+		}
+	}
+	#endif
 
 	proc = kmalloc(sizeof(*proc));
 	if (proc == NULL) {
@@ -81,6 +96,22 @@ proc_create(const char *name)
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
+	
+	/* semaphore in orther to stop who is waiting this process */
+	#if OPT_EXIT
+	proc->proc_sem = sem_create(name, 0);
+	if(proc->proc_sem == NULL){
+		kfree(proc);
+		return NULL;
+	}
+
+	for(pid_t i=0; i<PID_MAX; i++){
+		if(vect_pid[i] == NULL){
+			vect_pid[i] = proc;
+			proc->pid = i;
+		}
+	}
+	#endif
 
 	return proc;
 }
@@ -167,6 +198,11 @@ proc_destroy(struct proc *proc)
 
 	KASSERT(proc->p_numthreads == 0);
 	spinlock_cleanup(&proc->p_lock);
+
+	#if OPT_EXIT
+	sem_destroy(proc->proc_sem);
+	vect_pid[proc->pid] = NULL;
+	#endif
 
 	kfree(proc->p_name);
 	kfree(proc);
@@ -318,3 +354,25 @@ proc_setas(struct addrspace *newas)
 	spinlock_release(&proc->p_lock);
 	return oldas;
 }
+
+#if OPT_EXIT
+/* wait the given process*/
+int proc_wait(struct proc *p){
+	int status;
+
+	/* wait on the semaphore of the process */
+	P(p->proc_sem);
+	spinlock_acquire(&p->p_lock);
+	status = p->status;
+	kprintf("Proc: %s, exit_code: %d\n", p->p_name, status);
+	spinlock_release(&p->p_lock);	
+
+	proc_destroy(p);
+
+	return status;
+}
+
+struct proc *proc_of_pid(pid_t pid){
+	return vect_pid[pid];
+}
+#endif

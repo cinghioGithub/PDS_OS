@@ -29,6 +29,7 @@
 
 #ifndef _KERN_LIMITS_H_
 #define _KERN_LIMITS_H_
+#include "opt-exit.h"
 
 /*
  * Constants for libc's <limits.h> - system limits.
@@ -77,7 +78,11 @@
 #define __PID_MIN       2
 
 /* Max value for a process ID (change this to match your implementation) */
+#if OPT_EXIT
+#define __PID_MAX	100
+#else
 #define __PID_MAX       32767
+#endif
 
 /* Max open files per process */
 #define __OPEN_MAX      128

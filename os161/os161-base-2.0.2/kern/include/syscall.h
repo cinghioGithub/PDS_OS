@@ -33,6 +33,11 @@
 
 #include <cdefs.h> /* for __DEAD */
 #include "opt-syscalls.h"
+#include "opt-exit.h"
+#if OPT_EXIT
+#include <current.h>
+#include <types.h>
+#endif
 
 struct trapframe; /* from <machine/trapframe.h> */
 
@@ -65,6 +70,10 @@ int sys___time(userptr_t user_seconds, userptr_t user_nanoseconds);
 int sys_write(int fd, userptr_t buf_ptr, size_t size);
 int sys_read(int fd, userptr_t buf_ptr, size_t size);
 void sys__exit(int status);
+#endif
+
+#if OPT_EXIT
+int sys_waitpid(pid_t pid);
 #endif
 
 #endif /* _SYSCALL_H_ */

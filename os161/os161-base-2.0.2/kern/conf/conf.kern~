@@ -449,3 +449,4 @@ optfile	  syscalls syscall/file_syscall.c
 optfile   syscalls syscall/proc_syscalls.c
 
 defoption lock1
+defoption lock2
