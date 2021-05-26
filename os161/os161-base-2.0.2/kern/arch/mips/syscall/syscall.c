@@ -34,6 +34,7 @@
 #include <mips/trapframe.h>
 #include <thread.h>
 #include <current.h>
+#include <addrspace.h>
 #include <syscall.h>
 
 
@@ -130,7 +131,17 @@ syscall(struct trapframe *tf)
 		
 #if OPT_EXIT
 	    case SYS_waitpid:
-		sys_waitpid((pid_t)tf->tf_a0);
+		sys_waitpid((pid_t)tf->tf_a0,
+			    (int *)tf->tf_a1,
+			    (int)tf->tf_a2);
+		break;
+
+	    case SYS_getpid:
+		sys_getpid();
+		break;
+
+	    case SYS_fork:
+		err = sys_fork(tf, &retval);
 		break;
 #endif
 
@@ -180,5 +191,20 @@ syscall(struct trapframe *tf)
 void
 enter_forked_process(struct trapframe *tf)
 {
+#if OPT_EXIT
+	// Duplicate frame so it's on stack
+	struct trapframe forkedTf = *tf; // copy trap frame onto kernel stack
+
+	forkedTf.tf_v0 = 0; // return value is 0
+        forkedTf.tf_a3 = 0; // return with success
+
+	forkedTf.tf_epc += 4; // return to next instruction
+	
+	as_activate();
+
+
+	mips_usermode(&forkedTf);
+#else
 	(void)tf;
+#endif
 }

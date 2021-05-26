@@ -117,6 +117,7 @@ common_prog(int nargs, char **args)
 	int result;
 	#if OPT_EXIT
 	int exit_status;
+	pid_t pid = 0;
 	#endif
 
 	/* Create a process for the new program to run in. */
@@ -140,8 +141,9 @@ common_prog(int nargs, char **args)
 	 * once you write the code for handling that.
 	 */
 	#if OPT_EXIT
+	pid = sys_getpid();
 	//exit_status = proc_wait(proc);
-	exit_status = sys_waitpid(proc->pid);
+	pid = sys_waitpid(pid, &exit_status, 0);
 	return exit_status;
 	#else
 	return 0;

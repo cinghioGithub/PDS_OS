@@ -73,7 +73,9 @@ void sys__exit(int status);
 #endif
 
 #if OPT_EXIT
-int sys_waitpid(pid_t pid);
+pid_t sys_waitpid(pid_t pid, int *returncode, int flags);
+pid_t sys_getpid(void);
+int sys_fork(struct trapframe *ctf, pid_t *retval);
 #endif
 
 #endif /* _SYSCALL_H_ */
