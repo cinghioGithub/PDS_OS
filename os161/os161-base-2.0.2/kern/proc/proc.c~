@@ -371,4 +371,8 @@ int proc_wait(struct proc *p){
 
 	return status;
 }
+
+struct proc *proc_of_pid(pid_t pid){
+	return vect_pid[pid];
+}
 #endif

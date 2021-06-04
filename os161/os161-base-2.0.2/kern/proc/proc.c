@@ -113,6 +113,12 @@ proc_create(const char *name)
 	}
 	#endif
 
+	#if OPT_FILE
+	for(int i=0; i<OPEN_MAX; i++){
+		proc->proc_open_files[i] = NULL;
+	}
+	#endif
+
 	return proc;
 }
 

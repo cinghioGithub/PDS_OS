@@ -34,6 +34,7 @@
 #include <cdefs.h> /* for __DEAD */
 #include "opt-syscalls.h"
 #include "opt-exit.h"
+#include "opt-file.h"
 #if OPT_EXIT
 #include <current.h>
 #include <types.h>
@@ -75,7 +76,14 @@ void sys__exit(int status);
 #if OPT_EXIT
 pid_t sys_waitpid(pid_t pid, int *returncode, int flags);
 pid_t sys_getpid(void);
-int sys_fork(struct trapframe *ctf, pid_t *retval)
+//int sys_fork(struct trapframe *ctf, pid_t *retval);
+#endif
+
+#if OPT_FILE
+struct openfile;
+int sys_open(const char* file_name, int flags, mode_t mode, int *errp);
+int sys_close(int fd);
+ssize_t file_read(int fd, userptr_t buf_ptr, size_t size);
 #endif
 
 #endif /* _SYSCALL_H_ */

@@ -450,3 +450,4 @@ optfile   syscalls syscall/proc_syscalls.c
 
 defoption lock1
 defoption lock2
+defoption exit

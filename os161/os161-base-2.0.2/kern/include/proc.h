@@ -38,6 +38,11 @@
 
 #include <spinlock.h>
 #include "opt-exit.h"
+#include "opt-file.h"
+
+#if OPT_FILE
+#include <limits.h>
+#endif
 
 #if OPT_EXIT
 #include <synch.h>
@@ -81,6 +86,11 @@ struct proc {
 	struct semaphore *proc_sem;
 	int status;
 	pid_t pid;
+	#endif
+
+	#if OPT_FILE
+	/* lits of open file of a single process */
+	struct openfile* proc_open_files[OPEN_MAX];
 	#endif
 };
 
